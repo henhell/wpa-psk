@@ -6,8 +6,9 @@ from getpass import getpass
 from hashlib import pbkdf2_hmac
 
 parser = ArgumentParser(
-    description="%(prog)s pre-computes PSK entries for network configuration blocks of a wpa_supplicant.conf file. An ASCII passphrase and SSID are used to generate a 256-bit PSK."
+    description="%(prog)s pre-computes PSK entries for network configuration blocks of wpa_supplicant or iwd."
 )
+parser.add_argument("--iwd", help="Generate for iwd (iNet Wireless Daemon)", action="store_true")
 parser.add_argument("ssid", help="The SSID whose passphrase should be derived.")
 parser.add_argument(
     "passphrase",
@@ -31,11 +32,18 @@ if any(b < 32 or b == 127 for b in passphrase):
 
 ssid = args.ssid.encode()
 psk = pbkdf2_hmac("sha1", passphrase, ssid, iterations=4096, dklen=32)
-print(
-    "network={",
-    f'\tssid="{args.ssid}"',
-    f'\t#psk="{args.passphrase}"',
-    f"\tpsk={psk.hex()}",
-    "}",
-    sep="\n",
-)
+if not args.iwd:
+    print(
+        "network={",
+        f'\tssid="{args.ssid}"',
+        f'\t#psk="{args.passphrase}"',
+        f"\tpsk={psk.hex()}",
+        "}",
+        sep="\n",
+    )
+else:
+    print(
+        "[Security]",
+        f"PreSharedKey={psk.hex()}",
+        sep="\n",
+    )
